@@ -60,8 +60,26 @@
 
                 if (response.ok) {
                     console.log('Login successful, redirecting...');
-                    // Redirect to dashboard - token is already set as cookie by the server
-                    window.location.href = '/dashboard';
+                    console.log('Login response:', data);
+                    
+                    // Add a small delay before redirecting to ensure cookie is set
+                    setTimeout(() => {
+                        // Check if we can access the cookie (we shouldn't be able to due to httpOnly)
+                        console.log('Cookies available to JS:', document.cookie);
+                        
+                        // First try to fetch the debug route to verify cookie is set
+                        fetch('/debug-cookies')
+                            .then(response => response.json())
+                            .then(debug => {
+                                console.log('Cookie debug:', debug);
+                                // Now redirect to dashboard
+                                window.location.href = '/dashboard';
+                            })
+                            .catch(err => {
+                                console.error('Error checking cookies:', err);
+                                window.location.href = '/dashboard';
+                            });
+                    }, 500);
                 } else {
                     // Show error message
                     errorAlert.textContent = data.error || 'Login failed. Please check your credentials.';

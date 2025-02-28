@@ -42,7 +42,19 @@ app.get('/register', (req, res) => {
 
 const { authenticate } = require('./middlewares/auth');
 
+// Debug route to check cookies
+app.get('/debug-cookies', (req, res) => {
+  console.log("Debug cookies route accessed");
+  console.log("All cookies:", req.cookies);
+  res.json({
+    cookies: req.cookies,
+    hasToken: !!req.cookies.token,
+    tokenLength: req.cookies.token ? req.cookies.token.length : 0
+  });
+});
+
 app.get('/dashboard', authenticate, (req, res) => {
+  console.log("Dashboard route accessed with authenticated user");
   res.render('dashboard', { user: req.user });
 });
 

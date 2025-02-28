@@ -3,11 +3,16 @@ const jwtDecode = require("jwt-decode");
 
 const authenticate = async (req, res, next) => {
   try {
+    console.log("==== Authentication Start ====");
+    console.log("Request path:", req.path);
+    console.log("Request method:", req.method);
+    
     // Get token from Authorization header or cookies
     const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
     console.log("Auth Headers:", req.headers.authorization);
-    console.log("Cookies:", req.cookies);
-    console.log("Received Token:", token);
+    console.log("All cookies:", req.cookies);
+    console.log("Token from cookies:", req.cookies?.token);
+    console.log("Token length:", token ? token.length : 0);
 
     if (!token) {
       console.log("No token provided, redirecting to login");
@@ -17,7 +22,18 @@ const authenticate = async (req, res, next) => {
     try {
       // Decode the token for debugging
       const decodedToken = jwtDecode(token);
-      console.log("Decoded Token:", decodedToken);
+      console.log("Decoded Token:", JSON.stringify(decodedToken, null, 2));
+      console.log("Token claims - token_use:", decodedToken.token_use);
+      console.log("Token claims - exp:", new Date(decodedToken.exp * 1000).toISOString());
+      console.log("Current time:", new Date().toISOString());
+
+      // Check if token is expired
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (decodedToken.exp && decodedToken.exp < currentTime) {
+        console.log("Token is expired, redirecting to login");
+        res.clearCookie('token');
+        return res.redirect('/?error=token_expired');
+      }
 
       // Ensure token is an Access Token
       if (decodedToken.token_use !== "access") {
