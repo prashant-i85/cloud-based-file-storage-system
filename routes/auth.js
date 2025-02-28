@@ -62,6 +62,10 @@ router.post('/login', async (req, res) => {
 
     const data = await cognito.initiateAuth(params).promise();
 
+    if (!data.AuthenticationResult) {
+      throw new Error('Authentication failed: No authentication result returned');
+    }
+
     // Set token as cookie
     res.cookie('token', data.AuthenticationResult.AccessToken, {
       httpOnly: true,

@@ -58,7 +58,7 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.token) {
                     // Store token in localStorage
                     localStorage.setItem('token', data.token);
 
@@ -68,6 +68,7 @@
                     // Show error message
                     errorAlert.textContent = data.error || 'Login failed. Please check your credentials.';
                     errorAlert.classList.remove('d-none');
+                    console.error('Login response:', data);
                 }
             } catch (error) {
                 console.error('Login error:', error);
