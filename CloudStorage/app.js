@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser(process.env.COOKIE_SECRET || 'secret-key'));
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Set view engine
@@ -40,43 +40,12 @@ app.get('/register', (req, res) => {
   res.render('register');
 });
 
-const { authenticate } = require('./middlewares/auth');
-
-app.get('/dashboard', (req, res, next) => {
-  // If token is in query params, set it in the cookie before authentication
-  if (req.query.token) {
-    console.log('Received token via query params, setting cookie');
-    res.cookie('token', req.query.token, {
-      httpOnly: false,
-      maxAge: 3600000, // 1 hour
-      path: '/',
-      sameSite: 'lax' // Changed from strict to lax to allow redirects
-    });
-  }
-  next();
-}, authenticate, (req, res) => {
-  res.render('dashboard', { user: req.user });
+app.get('/dashboard', (req, res) => {
+  res.render('dashboard');
 });
 
-app.get('/file/:fileId', authenticate, (req, res) => {
-  res.render('fileView', { fileId: req.params.fileId, user: req.user });
-});
-
-// Debug route to check authentication
-app.get('/debug-auth', (req, res) => {
-  const token = req.headers.authorization?.split(' ')[1] || 
-                req.cookies?.token || 
-                req.query?.token;
-  
-  res.json({
-    hasToken: !!token, 
-    tokenSource: token ? 'Found token' : 'No token',
-    cookies: req.cookies,
-    headers: {
-      authorization: req.headers.authorization,
-      cookie: req.headers.cookie
-    }
-  });
+app.get('/file/:fileId', (req, res) => {
+  res.render('fileView', { fileId: req.params.fileId });
 });
 
 // Handle 404

@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const { cognito } = require('../config/aws-config');
@@ -67,19 +66,12 @@ router.post('/login', async (req, res) => {
       throw new Error('Authentication failed: No authentication result returned');
     }
 
-    // Set token as cookie (secure but accessible to JavaScript)
+    // Set token as cookie
     res.cookie('token', data.AuthenticationResult.AccessToken, {
-      httpOnly: false, // Make accessible to JS
-      maxAge: 3600000, // 1 hour
-      path: '/',
-      sameSite: 'lax'
+      httpOnly: true,
+      maxAge: 3600000 // 1 hour
     });
 
-    // Set cache control headers to prevent caching of auth responses
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    
     res.status(200).json({
       message: 'Login successful',
       token: data.AuthenticationResult.AccessToken,
