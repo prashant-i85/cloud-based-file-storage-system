@@ -1,11 +1,7 @@
 // Check if user is logged in
 document.addEventListener('DOMContentLoaded', () => {
-    const token = localStorage.getItem('token');
-
-    if (!token && window.location.pathname !== '/' && window.location.pathname !== '/register') {
-        // Redirect to login if not logged in
-        window.location.href = '/';
-    }
+    // We no longer need to check localStorage for the token
+    // The authentication is handled by cookies
 
     // Initialize the dashboard if on dashboard page
     if (window.location.pathname === '/dashboard') {
@@ -25,8 +21,8 @@ function initDashboard() {
     loadFiles();
 
     // Set up event listeners
-    document.getElementById('uploadBtn').addEventListener('click', uploadFile);
-    document.getElementById('searchBtn').addEventListener('click', () => {
+    document.getElementById('uploadBtn')?.addEventListener('click', uploadFile);
+    document.getElementById('searchBtn')?.addEventListener('click', () => {
         const keyword = document.getElementById('searchInput').value;
         if (keyword) {
             searchFiles(keyword);
@@ -35,7 +31,7 @@ function initDashboard() {
         }
     });
 
-    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+    document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             const keyword = document.getElementById('searchInput').value;
             if (keyword) {
@@ -46,11 +42,11 @@ function initDashboard() {
         }
     });
 
-    document.getElementById('fileTypeFilter').addEventListener('change', () => {
+    document.getElementById('fileTypeFilter')?.addEventListener('change', () => {
         loadFiles();
     });
 
-    document.getElementById('sortOrder').addEventListener('change', () => {
+    document.getElementById('sortOrder')?.addEventListener('change', () => {
         loadFiles();
     });
 }
@@ -62,60 +58,44 @@ async function loadFiles() {
         const sortOrderValue = document.getElementById('sortOrder').value;
         const [sortBy, order] = sortOrderValue.split('-');
 
-        const token = localStorage.getItem('token');
-
         let url = `/api/files/list?sortBy=${sortBy}&order=${order}`;
         if (fileTypeFilter) {
             url += `&fileType=${fileTypeFilter}`;
         }
 
         const response = await fetch(url, {
+            method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`
-            }
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include' // Include cookies in the request
         });
 
-        if (response.status === 401) {
-            // Token expired or invalid
-            localStorage.removeItem('token');
-            window.location.href = '/';
-            return;
-        }
-
-        const data = await response.json();
-
         if (response.ok) {
-            displayFiles(data.files);
+            const files = await response.json();
+            displayFiles(files);
         } else {
-            showAlert('danger', data.error || 'Failed to load files');
+            showAlert('error', 'Failed to load files');
         }
     } catch (error) {
         console.error('Error loading files:', error);
-        showAlert('danger', 'An error occurred while loading files');
+        showAlert('error', 'An error occurred while loading files');
     }
 }
 
 // Search files
 async function searchFiles(keyword) {
     try {
-        const token = localStorage.getItem('token');
-
         const response = await fetch(`/api/files/search?keyword=${encodeURIComponent(keyword)}`, {
+            method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`
-            }
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include' // Include cookies in the request
         });
 
-        if (response.status === 401) {
-            // Token expired or invalid
-            localStorage.removeItem('token');
-            window.location.href = '/';
-            return;
-        }
-
-        const data = await response.json();
-
         if (response.ok) {
+            const data = await response.json();
             displayFiles(data.files);
             if (data.files.length === 0) {
                 showAlert('info', `No files found for "${keyword}"`);
@@ -123,7 +103,7 @@ async function searchFiles(keyword) {
                 showAlert('success', `Found ${data.files.length} files matching "${keyword}"`);
             }
         } else {
-            showAlert('danger', data.error || 'Search failed');
+            showAlert('danger', 'Search failed');
         }
     } catch (error) {
         console.error('Search error:', error);
@@ -131,59 +111,43 @@ async function searchFiles(keyword) {
     }
 }
 
+
 // Display files in the table
 function displayFiles(files) {
     const filesList = document.getElementById('filesList');
 
+    if (!filesList) return;
+
     if (files.length === 0) {
-        filesList.innerHTML = `
-            <tr>
-                <td colspan="5" class="text-center py-4">
-                    <div class="mb-3">
-                        <i class="bi bi-folder2-open display-4"></i>
-                    </div>
-                    <p class="mb-0">No files found</p>
-                </td>
-            </tr>
-        `;
+        filesList.innerHTML = '<tr><td colspan="5" class="text-center py-4">No files found</td></tr>';
         return;
     }
 
-    filesList.innerHTML = files.map(file => {
-        // Format file size
-        const fileSize = formatFileSize(file.size);
-
-        // Format date
-        const uploadDate = new Date(file.uploadedAt).toLocaleDateString();
-
-        // Get icon based on file type
-        const icon = getFileIcon(file.fileType);
-
-        return `
+    let html = '';
+    files.forEach(file => {
+        html += `
             <tr>
+                <td>${file.filename}</td>
+                <td>${file.fileType}</td>
+                <td>${formatSize(file.size)}</td>
+                <td>${new Date(file.uploadedAt).toLocaleString()}</td>
                 <td>
-                    <div class="d-flex align-items-center">
-                        <div class="me-2">${icon}</div>
-                        <div>${file.filename}</div>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary" onclick="previewFile('${file.fileId}')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <a href="/api/files/download/${file.fileId}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-download"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteFile('${file.fileId}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </div>
-                </td>
-                <td>${capitalizeFirstLetter(file.fileType)}</td>
-                <td>${fileSize}</td>
-                <td>${uploadDate}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-secondary me-1" onclick="previewFile('${file.fileId}')">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="downloadFile('${file.fileId}')">
-                        <i class="bi bi-download"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteFile('${file.fileId}')">
-                        <i class="bi bi-trash"></i>
-                    </button>
                 </td>
             </tr>
         `;
-    }).join('');
+    });
+    filesList.innerHTML = html;
 }
 
 // Upload file
@@ -217,12 +181,8 @@ async function uploadFile() {
     formData.append('file', file);
 
     try {
-        const token = localStorage.getItem('token');
-
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/files/upload', true);
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-
         // Track upload progress
         xhr.upload.addEventListener('progress', (event) => {
             if (event.lengthComputable) {
@@ -299,35 +259,18 @@ async function previewFile(fileId) {
     `;
 
     try {
-        const token = localStorage.getItem('token');
-
         const response = await fetch(`/api/files/${fileId}/preview`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            method: 'GET',
+            credentials: 'include' // Include cookies in the request
         });
 
-        if (response.status === 401) {
-            // Token expired or invalid
-            localStorage.removeItem('token');
-            window.location.href = '/';
-            return;
-        }
-
-        const data = await response.json();
-
         if (response.ok) {
-            // Update preview title
+            const data = await response.json();
             previewTitle.textContent = data.filename;
-
-            // Set download button
             downloadBtn.onclick = () => downloadFile(fileId);
 
-            // Display preview based on file type
             if (data.fileType === 'image') {
-                previewContent.innerHTML = `
-                    <img src="${data.previewUrl}" class="img-fluid" alt="${data.filename}">
-                `;
+                previewContent.innerHTML = `<img src="${data.previewUrl}" class="img-fluid" alt="${data.filename}">`;
             } else if (data.fileType === 'video') {
                 previewContent.innerHTML = `
                     <video controls class="img-fluid">
@@ -336,9 +279,7 @@ async function previewFile(fileId) {
                     </video>
                 `;
             } else if (data.fileType === 'document' && data.mimeType === 'application/pdf') {
-                previewContent.innerHTML = `
-                    <iframe src="${data.previewUrl}" width="100%" height="500px" frameborder="0"></iframe>
-                `;
+                previewContent.innerHTML = `<iframe src="${data.previewUrl}" width="100%" height="500px" frameborder="0"></iframe>`;
             } else {
                 previewContent.innerHTML = `
                     <div class="p-5 text-center">
@@ -352,44 +293,24 @@ async function previewFile(fileId) {
                 `;
             }
         } else {
-            previewContent.innerHTML = `
-                <div class="alert alert-danger">
-                    ${data.error || 'Failed to load preview'}
-                </div>
-            `;
+            showAlert('error', 'Failed to load preview');
         }
     } catch (error) {
         console.error('Preview error:', error);
-        previewContent.innerHTML = `
-            <div class="alert alert-danger">
-                An error occurred while loading the preview
-            </div>
-        `;
+        showAlert('error', 'An error occurred while loading the preview');
     }
 }
 
 // Download file
 async function downloadFile(fileId) {
     try {
-        const token = localStorage.getItem('token');
-
         const response = await fetch(`/api/files/${fileId}/download`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            method: 'GET',
+            credentials: 'include'
         });
 
-        if (response.status === 401) {
-            // Token expired or invalid
-            localStorage.removeItem('token');
-            window.location.href = '/';
-            return;
-        }
-
-        const data = await response.json();
-
         if (response.ok) {
-            // Create a temporary link and click it to start download
+            const data = await response.json();
             const link = document.createElement('a');
             link.href = data.downloadUrl;
             link.target = '_blank';
@@ -398,11 +319,11 @@ async function downloadFile(fileId) {
             link.click();
             document.body.removeChild(link);
         } else {
-            showAlert('danger', data.error || 'Failed to download file');
+            showAlert('error', 'Failed to download file');
         }
     } catch (error) {
         console.error('Download error:', error);
-        showAlert('danger', 'An error occurred during download');
+        showAlert('error', 'An error occurred during download');
     }
 }
 
@@ -413,104 +334,64 @@ async function deleteFile(fileId) {
     }
 
     try {
-        const token = localStorage.getItem('token');
-
         const response = await fetch(`/api/files/${fileId}`, {
             method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include'
         });
-
-        if (response.status === 401) {
-            // Token expired or invalid
-            localStorage.removeItem('token');
-            window.location.href = '/';
-            return;
-        }
-
-        const data = await response.json();
 
         if (response.ok) {
             showAlert('success', 'File deleted successfully');
             loadFiles();
         } else {
-            showAlert('danger', data.error || 'Failed to delete file');
+            showAlert('error', 'Failed to delete file');
         }
     } catch (error) {
         console.error('Delete error:', error);
-        showAlert('danger', 'An error occurred during deletion');
+        showAlert('error', 'An error occurred during deletion');
     }
 }
 
-// Logout
+// Logout function
 async function logout() {
     try {
-        const token = localStorage.getItem('token');
-
-        await fetch('/api/auth/logout', {
+        const response = await fetch('/api/auth/logout', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include' // Include cookies in the request
         });
 
-        // Clear token and redirect to login
-        localStorage.removeItem('token');
-        window.location.href = '/';
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            showAlert('error', 'Failed to logout');
+        }
     } catch (error) {
         console.error('Logout error:', error);
-        // Still clear token and redirect to login
-        localStorage.removeItem('token');
-        window.location.href = '/';
+        showAlert('error', 'An error occurred during logout');
     }
 }
 
-// Utility functions
+
+// Helper function to format file size
+function formatSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Helper function to show alerts
 function showAlert(type, message) {
     const alertContainer = document.getElementById('alertContainer');
-    const alertId = 'alert-' + Date.now();
+    if (!alertContainer) return;
 
-    const alertHtml = `
-        <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+    const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+    alertContainer.innerHTML = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     `;
-
-    alertContainer.innerHTML += alertHtml;
-
-    // Auto-close after 5 seconds
-    setTimeout(() => {
-        const alert = document.getElementById(alertId);
-        if (alert) {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        }
-    }, 5000);
-}
-
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function getFileIcon(fileType) {
-    switch (fileType) {
-        case 'image':
-            return '<i class="bi bi-file-image text-primary"></i>';
-        case 'video':
-            return '<i class="bi bi-file-play text-danger"></i>';
-        case 'document':
-            return '<i class="bi bi-file-text text-info"></i>';
-        default:
-            return '<i class="bi bi-file-earmark text-secondary"></i>';
-    }
 }
 
 function capitalizeFirstLetter(string) {

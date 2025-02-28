@@ -157,6 +157,45 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/main.js"></script>
+    <script>
+  // Check if token exists in localStorage
+  const token = localStorage.getItem('token');
+  if (token) {
+    console.log("Found token in localStorage, using it for requests");
+    
+    // Try to set it as a cookie as well (backup)
+    document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Strict`;
+    
+    // Add token to Authorization header for future requests
+    const apiFetch = async (url, options = {}) => {
+      const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`,
+        'x-local-token': token
+      };
+      
+      return fetch(url, {
+        ...options,
+        headers
+      });
+    };
+    
+    // Replace fetch with our custom function
+    window.originalFetch = window.fetch;
+    window.fetch = apiFetch;
+    
+    // Also append token to URLs if they go to our own domain
+    const originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+      if (url.startsWith('/') || url.startsWith(window.location.origin)) {
+        url = url + (url.includes('?') ? '&' : '?') + 'token=' + token;
+      }
+      return originalOpen.call(this, method, url, ...rest);
+    };
+  } else {
+    console.error("No token found in localStorage!");
+  }
+</script>
+<script src="/js/main.js"></script>
 </body>
 </html>

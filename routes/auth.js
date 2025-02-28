@@ -1,3 +1,4 @@
+
 const express = require('express');
 const router = express.Router();
 const { cognito } = require('../config/aws-config');
@@ -71,7 +72,14 @@ router.post('/login', async (req, res) => {
       httpOnly: true,
       maxAge: 3600000, // 1 hour
       path: '/',
-      sameSite: 'strict'
+      sameSite: 'lax' // Changed from strict to lax to allow redirects
+    });
+    
+    // Set a non-httpOnly cookie as well for client-side access
+    res.cookie('token_debug', 'token_set_' + Date.now(), {
+      httpOnly: false,
+      maxAge: 3600000,
+      path: '/'
     });
 
     res.status(200).json({
