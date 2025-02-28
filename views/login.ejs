@@ -17,9 +17,6 @@
                     </div>
                     <div class="card-body">
                         <h4 class="card-title mb-4">Login</h4>
-                        <% if (typeof error !== 'undefined' && error) { %>
-                            <div class="alert alert-danger" role="alert"><%= error %></div>
-                        <% } %>
                         <div id="errorAlert" class="alert alert-danger d-none" role="alert"></div>
                         <form id="loginForm">
                             <div class="mb-3">
@@ -67,15 +64,22 @@
                     
                     // Add a small delay before redirecting to ensure cookie is set
                     setTimeout(() => {
+                        // Check if we can access the cookie (we shouldn't be able to due to httpOnly)
                         console.log('Cookies available to JS:', document.cookie);
                         
-                        // Use a form submission to navigate to dashboard (better for cookie preservation)
-                        const form = document.createElement('form');
-                        form.method = 'GET';
-                        form.action = '/dashboard';
-                        document.body.appendChild(form);
-                        form.submit();
-                    }, 1000);
+                        // First try to fetch the debug route to verify cookie is set
+                        fetch('/debug-cookies')
+                            .then(response => response.json())
+                            .then(debug => {
+                                console.log('Cookie debug:', debug);
+                                // Now redirect to dashboard
+                                window.location.href = '/dashboard';
+                            })
+                            .catch(err => {
+                                console.error('Error checking cookies:', err);
+                                window.location.href = '/dashboard';
+                            });
+                    }, 500);
                 } else {
                     // Show error message
                     errorAlert.textContent = data.error || 'Login failed. Please check your credentials.';
