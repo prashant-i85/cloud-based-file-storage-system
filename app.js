@@ -43,7 +43,19 @@ app.get('/register', (req, res) => {
 
 const { authenticate } = require('./middlewares/auth');
 
-app.get('/dashboard', authenticate, (req, res) => {
+app.get('/dashboard', (req, res, next) => {
+  // If token is in query params, set it in the cookie before authentication
+  if (req.query.token) {
+    console.log('Received token via query params, setting cookie');
+    res.cookie('token', req.query.token, {
+      httpOnly: true,
+      maxAge: 3600000, // 1 hour
+      path: '/',
+      sameSite: 'lax' // Changed from strict to lax to allow redirects
+    });
+  }
+  next();
+}, authenticate, (req, res) => {
   res.render('dashboard', { user: req.user });
 });
 

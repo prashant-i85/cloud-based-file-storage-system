@@ -9,16 +9,26 @@ const authenticate = async (req, res, next) => {
                 req.cookies?.token || 
                 req.query?.token;
     
-    // Check local storage token from custom header if present
+    // Check for token in various places
     if (req.headers['x-local-token']) {
       token = req.headers['x-local-token'];
     }
     
     // Debug info
+    console.log("Auth Check - Path:", req.path);
     console.log("Auth Headers:", req.headers);
     console.log("Cookies:", req.cookies);
     console.log("Query params:", req.query);
     console.log("Received Token:", token);
+    
+    // Check for token in session header (sometimes added by browsers)
+    if (!token && req.headers.cookie) {
+      const matches = req.headers.cookie.match(/token=([^;]+)/);
+      if (matches) {
+        token = matches[1];
+        console.log("Found token in raw cookie header:", token.substring(0, 20) + "...");
+      }
+    }
     
     if (!token) {
       console.log("No token provided, redirecting to login");
