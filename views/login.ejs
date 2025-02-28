@@ -58,28 +58,12 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    console.log('Login successful, redirecting...');
-                    console.log('Login response:', data);
-                    
-                    // Add a small delay before redirecting to ensure cookie is set
-                    setTimeout(() => {
-                        // Check if we can access the cookie (we shouldn't be able to due to httpOnly)
-                        console.log('Cookies available to JS:', document.cookie);
-                        
-                        // First try to fetch the debug route to verify cookie is set
-                        fetch('/debug-cookies')
-                            .then(response => response.json())
-                            .then(debug => {
-                                console.log('Cookie debug:', debug);
-                                // Now redirect to dashboard
-                                window.location.href = '/dashboard';
-                            })
-                            .catch(err => {
-                                console.error('Error checking cookies:', err);
-                                window.location.href = '/dashboard';
-                            });
-                    }, 500);
+                if (response.ok && data.token) {
+                    // Store token in localStorage
+                    localStorage.setItem('token', data.token);
+
+                    // Redirect to dashboard
+                    window.location.href = '/dashboard';
                 } else {
                     // Show error message
                     errorAlert.textContent = data.error || 'Login failed. Please check your credentials.';

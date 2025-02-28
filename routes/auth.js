@@ -66,19 +66,13 @@ router.post('/login', async (req, res) => {
       throw new Error('Authentication failed: No authentication result returned');
     }
 
-    console.log("Login successful, setting token cookie");
-    console.log("Token length:", data.AuthenticationResult.AccessToken.length);
-    
-    // Set token as cookie with more permissive settings
+    // Set token as cookie
     res.cookie('token', data.AuthenticationResult.AccessToken, {
       httpOnly: true,
       maxAge: 3600000, // 1 hour
       path: '/',
-      sameSite: 'lax', // Changed from 'strict' to 'lax' to allow redirects
-      secure: false   // Set to false to ensure the cookie works on non-HTTPS
+      sameSite: 'strict'
     });
-    
-    console.log("Cookie set:", req.cookies);
 
     res.status(200).json({
       message: 'Login successful',
