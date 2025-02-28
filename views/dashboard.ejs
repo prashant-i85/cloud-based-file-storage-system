@@ -28,7 +28,7 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="container mt-4" data-authenticated="true" data-time="<%= timestamp %>">
         <div class="row mb-4">
             <div class="col-md-6">
                 <h2>My Files</h2>
@@ -162,10 +162,10 @@
   const token = localStorage.getItem('token');
   if (token) {
     console.log("Found token in localStorage, using it for requests");
-    
+
     // Try to set it as a cookie as well (backup)
     document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Strict`;
-    
+
     // Add token to Authorization header for future requests
     const apiFetch = async (url, options = {}) => {
       const headers = {
@@ -173,17 +173,17 @@
         'Authorization': `Bearer ${token}`,
         'x-local-token': token
       };
-      
+
       return fetch(url, {
         ...options,
         headers
       });
     };
-    
+
     // Replace fetch with our custom function
     window.originalFetch = window.fetch;
     window.fetch = apiFetch;
-    
+
     // Also append token to URLs if they go to our own domain
     const originalOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(method, url, ...rest) {

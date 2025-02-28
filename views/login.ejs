@@ -40,6 +40,43 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Check if we came here from a failed redirect
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        if (error) {
+            const errorAlert = document.getElementById('errorAlert');
+            errorAlert.textContent = `Error: ${error}. Try logging in again.`;
+            errorAlert.classList.remove('d-none');
+        }
+        
+        // Check if we have a token in localStorage - if so we might be logged in
+        const token = localStorage.getItem('token');
+        if (token) {
+            console.log('Found token in localStorage, checking if valid...');
+            // Try to access dashboard directly with the token
+            fetch(`/debug-auth?token=${encodeURIComponent(token)}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Token check result:', data);
+                if (data.hasToken) {
+                    console.log('Token appears valid, redirecting to dashboard...');
+                    window.location.href = `/dashboard?token=${encodeURIComponent(token)}`;
+                } else {
+                    console.log('Token invalid, staying on login page');
+                    localStorage.removeItem('token');
+                }
+            })
+            .catch(err => {
+                console.error('Error checking token:', err);
+            });
+        }
+    </script>
     <script src="/js/login.js"></script>
 </body>
 </html>

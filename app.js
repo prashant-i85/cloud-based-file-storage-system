@@ -44,28 +44,27 @@ app.get('/register', (req, res) => {
 const { authenticate } = require('./middlewares/auth');
 
 app.get('/dashboard', (req, res, next) => {
-  console.log('Dashboard route hit with method:', req.method);
-  console.log('Query params:', req.query);
-  console.log('Headers:', req.headers);
+  console.log('Dashboard route hit with token in query:', !!req.query.token);
   
   // If token is in query params, set it in the cookie before authentication
   if (req.query.token) {
-    console.log('Received token via query params, setting cookie');
+    console.log('Setting cookie from query token');
     res.cookie('token', req.query.token, {
       httpOnly: true,
       maxAge: 3600000, // 1 hour
       path: '/',
-      sameSite: 'lax' // Changed from strict to lax to allow redirects
+      sameSite: 'lax' 
     });
-    
-    // Also set the Authorization header
-    req.headers.authorization = `Bearer ${req.query.token}`;
   }
   
   next();
 }, authenticate, (req, res) => {
-  console.log('User authenticated, rendering dashboard');
-  res.render('dashboard', { user: req.user });
+  // Successfully authenticated user
+  console.log('User authenticated as:', req.userId);
+  res.render('dashboard', { 
+    user: req.user,
+    timestamp: new Date().toISOString() 
+  });
 });
 
 app.get('/file/:fileId', authenticate, (req, res) => {
