@@ -1,64 +1,55 @@
 const AWS = require('aws-sdk');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+// Constants
+const FILES_TABLE = process.env.FILES_TABLE || 'cloud_storage_files';
+const BUCKET_NAME = process.env.BUCKET_NAME || 'cloud-storage-files';
 
 // Configure AWS
-AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION || 'us-east-1'
-});
+const initializeAWS = async () => {
+  // Configure AWS SDK
+  AWS.config.update({
+    region: process.env.AWS_REGION || 'us-east-1',
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+  });
 
-// Initialize AWS services
-const s3 = new AWS.S3();
-const cognito = new AWS.CognitoIdentityServiceProvider();
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
+  // Create S3 bucket if it doesn't exist
+  await createBucketIfNotExists();
 
-// S3 bucket name
-const BUCKET_NAME = process.env.BUCKET_NAME || 'cloud-storage-app-files';
+  // Create DynamoDB table if it doesn't exist
+  await createTableIfNotExists();
 
-// Cognito User Pool configurations
-const USER_POOL_ID = process.env.USER_POOL_ID;
-const CLIENT_ID = process.env.CLIENT_ID;
+  return {
+    s3: new AWS.S3(),
+    dynamodb: new AWS.DynamoDB.DocumentClient(),
+    cognito: new AWS.CognitoIdentityServiceProvider() //Added Cognito from original
+  };
+};
 
-// DynamoDB table name
-const FILES_TABLE = 'userFiles';
-
-// Create S3 bucket if it doesn't exist
 const createBucketIfNotExists = async () => {
+  const s3 = new AWS.S3();
   try {
     await s3.headBucket({ Bucket: BUCKET_NAME }).promise();
     console.log(`Bucket ${BUCKET_NAME} already exists`);
   } catch (error) {
     if (error.statusCode === 404) {
-      await s3.createBucket({
-        Bucket: BUCKET_NAME,
-        ACL: 'private'
-      }).promise();
-      console.log(`Bucket ${BUCKET_NAME} created successfully`);
-
-      // Set bucket policy for public read access to specific files
-      const bucketPolicy = {
-        Version: '2012-10-17',
-        Statement: [{
-          Sid: 'PublicReadForGetBucketObjects',
-          Effect: 'Allow',
-          Principal: '*',
-          Action: ['s3:GetObject'],
-          Resource: [`arn:aws:s3:::${BUCKET_NAME}/public/*`]
-        }]
-      };
-
-      await s3.putBucketPolicy({
-        Bucket: BUCKET_NAME,
-        Policy: JSON.stringify(bucketPolicy)
-      }).promise();
+      try {
+        await s3.createBucket({ Bucket: BUCKET_NAME }).promise();
+        console.log(`Bucket ${BUCKET_NAME} created successfully`);
+      } catch (createError) {
+        console.error('Error creating S3 bucket:', createError);
+        throw createError;
+      }
     } else {
-      console.error('Error creating bucket:', error);
+      console.error('Error checking S3 bucket:', error);
       throw error;
     }
   }
 };
 
-// Create DynamoDB table if it doesn't exist
 const createTableIfNotExists = async () => {
   const params = {
     TableName: FILES_TABLE,
@@ -106,19 +97,12 @@ const createTableIfNotExists = async () => {
   }
 };
 
-// Initialize AWS resources
-const initializeAWS = async () => {
-  await createBucketIfNotExists();
-  await createTableIfNotExists();
-};
-
 module.exports = {
-  s3,
-  cognito,
-  dynamoDB,
+  initializeAWS,
   BUCKET_NAME,
-  USER_POOL_ID,
-  CLIENT_ID,
   FILES_TABLE,
-  initializeAWS
+  //Retained from original
+  s3: new AWS.S3(),
+  cognito: new AWS.CognitoIdentityServiceProvider(),
+  dynamoDB: new AWS.DynamoDB.DocumentClient()
 };
