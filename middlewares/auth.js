@@ -1,6 +1,26 @@
 const { cognito } = require('../config/aws-config');
 const jwtDecode = require("jwt-decode");
 
+// Helper function to parse and validate a JWT token
+const validateToken = (token) => {
+  try {
+    const decodedToken = jwtDecode(token);
+    const currentTime = Math.floor(Date.now() / 1000);
+    
+    if (decodedToken.exp && decodedToken.exp < currentTime) {
+      return { valid: false, reason: 'expired' };
+    }
+    
+    if (decodedToken.token_use !== "access") {
+      return { valid: false, reason: 'not_access_token' };
+    }
+    
+    return { valid: true, decoded: decodedToken };
+  } catch (error) {
+    return { valid: false, reason: 'decode_error', error };
+  }
+};
+
 const authenticate = async (req, res, next) => {
   try {
     console.log("==== Authentication Start ====");
@@ -16,7 +36,12 @@ const authenticate = async (req, res, next) => {
 
     if (!token) {
       console.log("No token provided, redirecting to login");
-      return res.redirect('/');
+      // Clear any existing cookies to ensure a clean state
+      res.clearCookie('token');
+      res.clearCookie('token_debug');
+      
+      // Use a more forceful redirect
+      return res.status(401).render('login', { error: 'Please log in to access this page' });
     }
 
     try {

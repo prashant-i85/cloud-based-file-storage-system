@@ -14,10 +14,21 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Add debug middleware to log cookies on every request
+app.use((req, res, next) => {
+  console.log('=== REQUEST INFO ===');
+  console.log('Path:', req.path);
+  console.log('Cookies:', req.cookies);
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Set view engine
@@ -33,7 +44,8 @@ app.use('/api/files', fileRoutes);
 
 // Render views
 app.get('/', (req, res) => {
-  res.render('login');
+  const error = req.query.error || null;
+  res.render('login', { error });
 });
 
 app.get('/register', (req, res) => {

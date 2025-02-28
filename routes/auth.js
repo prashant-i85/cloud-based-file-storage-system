@@ -69,13 +69,20 @@ router.post('/login', async (req, res) => {
     console.log("Login successful, setting token cookie");
     console.log("Token length:", data.AuthenticationResult.AccessToken.length);
     
-    // Set token as cookie with more permissive settings
+    // Set the cookie with even more permissive settings
     res.cookie('token', data.AuthenticationResult.AccessToken, {
       httpOnly: true,
       maxAge: 3600000, // 1 hour
       path: '/',
-      sameSite: 'lax', // Changed from 'strict' to 'lax' to allow redirects
-      secure: false   // Set to false to ensure the cookie works on non-HTTPS
+      sameSite: 'none', // Changed to 'none' to ensure cross-site cookies work
+      secure: process.env.NODE_ENV === 'production' // Only require secure in production
+    });
+
+    // Also set a backup cookie without httpOnly for debugging
+    res.cookie('token_debug', 'token_set_' + Date.now(), {
+      httpOnly: false,
+      maxAge: 3600000,
+      path: '/'
     });
     
     console.log("Cookie set:", req.cookies);
