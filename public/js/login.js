@@ -18,13 +18,18 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
       body: JSON.stringify({
         username,
         password
-      })
+      }),
+      credentials: 'include' // Include cookies in the request
     });
     
     const data = await response.json();
     
+    // Print cookie debug info
+    console.log("Cookies available to JS:", document.cookie);
+    
     if (response.ok) {
       console.log('Login successful, redirecting...');
+      // No need to set localStorage, the server sets the cookie
       window.location.href = '/dashboard';
     } else {
       errorAlert.textContent = data.error || 'Login failed. Please check your credentials.';
