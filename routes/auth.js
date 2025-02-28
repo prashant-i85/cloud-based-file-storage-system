@@ -69,7 +69,9 @@ router.post('/login', async (req, res) => {
     // Set token as cookie
     res.cookie('token', data.AuthenticationResult.AccessToken, {
       httpOnly: true,
-      maxAge: 3600000 // 1 hour
+      maxAge: 3600000, // 1 hour
+      path: '/',
+      sameSite: 'strict'
     });
 
     res.status(200).json({

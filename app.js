@@ -40,12 +40,14 @@ app.get('/register', (req, res) => {
   res.render('register');
 });
 
-app.get('/dashboard', (req, res) => {
-  res.render('dashboard');
+const { authenticate } = require('./middlewares/auth');
+
+app.get('/dashboard', authenticate, (req, res) => {
+  res.render('dashboard', { user: req.user });
 });
 
-app.get('/file/:fileId', (req, res) => {
-  res.render('fileView', { fileId: req.params.fileId });
+app.get('/file/:fileId', authenticate, (req, res) => {
+  res.render('fileView', { fileId: req.params.fileId, user: req.user });
 });
 
 // Handle 404
