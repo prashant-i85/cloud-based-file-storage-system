@@ -46,6 +46,17 @@ const { authenticate } = require('./middlewares/auth');
 app.get('/dashboard', authenticate, (req, res) => {
   // Successfully authenticated user
   console.log('User authenticated as:', req.userId);
+  
+  // Always set a fresh cookie with the token
+  if (req.cookies?.token) {
+    res.cookie('token', req.cookies.token, {
+      httpOnly: false,
+      maxAge: 3600000, // 1 hour
+      path: '/',
+      sameSite: 'lax'
+    });
+  }
+  
   res.render('dashboard', { 
     user: req.user,
     timestamp: new Date().toISOString() 

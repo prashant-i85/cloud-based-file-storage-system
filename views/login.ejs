@@ -49,15 +49,6 @@
             errorAlert.textContent = `Error: ${error}. Try logging in again.`;
             errorAlert.classList.remove('d-none');
         }
-        
-        // Simple token check - if we have a token, try going to dashboard
-        const token = localStorage.getItem('token');
-        if (token) {
-            console.log('Found token in localStorage, attempting dashboard access');
-            // Set the token as a cookie before redirecting
-            document.cookie = `token=${token}; path=/; max-age=3600`;
-            window.location.href = '/dashboard';
-        }
     </script>
     <script src="/js/login.js"></script>
 </body>

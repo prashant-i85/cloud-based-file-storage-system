@@ -75,6 +75,11 @@ router.post('/login', async (req, res) => {
       sameSite: 'lax'
     });
 
+    // Set cache control headers to prevent caching of auth responses
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.status(200).json({
       message: 'Login successful',
       token: data.AuthenticationResult.AccessToken,

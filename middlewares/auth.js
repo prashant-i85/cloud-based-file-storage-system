@@ -1,3 +1,4 @@
+
 const { cognito } = require('../config/aws-config');
 const jwtDecode = require("jwt-decode");
 
@@ -5,8 +6,8 @@ const authenticate = async (req, res, next) => {
   try {
     // Check for token in multiple places
     const token = req.cookies?.token || 
-                  req.headers.authorization?.split(' ')[1] || 
-                  req.query?.token;
+                 req.headers.authorization?.split(' ')[1] || 
+                 req.query?.token;
 
     if (!token) {
       console.log("No token found, redirecting to login");
@@ -16,6 +17,7 @@ const authenticate = async (req, res, next) => {
     try {
       // Decode the token to check basic validity
       const decodedToken = jwtDecode(token);
+      console.log("Token decoded for user:", decodedToken.username || decodedToken.sub);
 
       // Check if token is expired
       const now = Math.floor(Date.now() / 1000);
@@ -32,7 +34,7 @@ const authenticate = async (req, res, next) => {
       req.userId = decodedToken.username || decodedToken.sub;
 
       // Continue to the protected route
-      next();
+      return next();
     } catch (decodeError) {
       console.error('Token decode error:', decodeError);
       return res.redirect('/?error=invalid_token');
