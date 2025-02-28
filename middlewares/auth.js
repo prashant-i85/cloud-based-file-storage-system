@@ -35,10 +35,13 @@ const authenticate = async (req, res, next) => {
       return res.redirect('/?error=no_token');
     }
 
+    // Log the attempted access for debugging
+    console.log(`Auth attempt for path: ${req.path}, method: ${req.method}`);
+
     try {
       // Decode the token for debugging
       const decodedToken = jwtDecode(token);
-      console.log("Decoded Token:", decodedToken);
+      console.log("Decoded Token Username:", decodedToken.username);
 
       // Check token type if present
       if (decodedToken.token_use && decodedToken.token_use !== "access") {

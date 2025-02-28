@@ -42,25 +42,30 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
         
         console.log('Token stored in localStorage, sessionStorage, and cookie');
         
-        // Create a hidden form and submit it to trigger server-side redirect
-        const form = document.createElement('form');
-        form.method = 'GET';
-        form.action = '/dashboard';
+        // Set an Authorization header for the redirect
+        const headers = new Headers();
+        headers.append('Authorization', `Bearer ${data.token}`);
+        headers.append('X-Local-Token', data.token);
         
-        // Add token as hidden field
-        const hiddenField = document.createElement('input');
-        hiddenField.type = 'hidden';
-        hiddenField.name = 'token';
-        hiddenField.value = data.token;
-        form.appendChild(hiddenField);
-        
-        document.body.appendChild(form);
-        console.log('Submitting form to redirect to dashboard...');
-        
-        // Submit the form after a short delay
-        setTimeout(() => {
-          form.submit();
-        }, 100);
+        // Using fetch with redirect follow to get to dashboard
+        fetch('/dashboard', {
+          method: 'GET',
+          headers: headers,
+          credentials: 'include'
+        }).then(response => {
+          if (response.ok || response.redirected) {
+            // Force a complete page load to dashboard
+            window.location.href = '/dashboard?token=' + encodeURIComponent(data.token);
+          } else {
+            console.error('Dashboard redirect failed');
+            errorAlert.textContent = 'Authentication successful but redirect failed. Try again.';
+            errorAlert.classList.remove('d-none');
+          }
+        }).catch(err => {
+          console.error('Dashboard fetch error:', err);
+          // Fallback direct navigation
+          window.location.href = '/dashboard?token=' + encodeURIComponent(data.token);
+        });
       } else {
         console.error('No token received in login response!');
         errorAlert.textContent = 'Authentication successful but no token received. Please try again.';

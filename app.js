@@ -44,6 +44,10 @@ app.get('/register', (req, res) => {
 const { authenticate } = require('./middlewares/auth');
 
 app.get('/dashboard', (req, res, next) => {
+  console.log('Dashboard route hit with method:', req.method);
+  console.log('Query params:', req.query);
+  console.log('Headers:', req.headers);
+  
   // If token is in query params, set it in the cookie before authentication
   if (req.query.token) {
     console.log('Received token via query params, setting cookie');
@@ -53,14 +57,36 @@ app.get('/dashboard', (req, res, next) => {
       path: '/',
       sameSite: 'lax' // Changed from strict to lax to allow redirects
     });
+    
+    // Also set the Authorization header
+    req.headers.authorization = `Bearer ${req.query.token}`;
   }
+  
   next();
 }, authenticate, (req, res) => {
+  console.log('User authenticated, rendering dashboard');
   res.render('dashboard', { user: req.user });
 });
 
 app.get('/file/:fileId', authenticate, (req, res) => {
   res.render('fileView', { fileId: req.params.fileId, user: req.user });
+});
+
+// Debug route to check authentication
+app.get('/debug-auth', (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1] || 
+                req.cookies?.token || 
+                req.query?.token;
+  
+  res.json({
+    hasToken: !!token, 
+    tokenSource: token ? 'Found token' : 'No token',
+    cookies: req.cookies,
+    headers: {
+      authorization: req.headers.authorization,
+      cookie: req.headers.cookie
+    }
+  });
 });
 
 // Handle 404
