@@ -67,19 +67,12 @@ router.post('/login', async (req, res) => {
       throw new Error('Authentication failed: No authentication result returned');
     }
 
-    // Set token as cookie
+    // Set token as cookie (secure but accessible to JavaScript)
     res.cookie('token', data.AuthenticationResult.AccessToken, {
-      httpOnly: true,
+      httpOnly: false, // Make accessible to JS
       maxAge: 3600000, // 1 hour
       path: '/',
-      sameSite: 'lax' // Changed from strict to lax to allow redirects
-    });
-    
-    // Set a non-httpOnly cookie as well for client-side access
-    res.cookie('token_debug', 'token_set_' + Date.now(), {
-      httpOnly: false,
-      maxAge: 3600000,
-      path: '/'
+      sameSite: 'lax'
     });
 
     res.status(200).json({

@@ -15,7 +15,6 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
     // Clear any existing tokens
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
-    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     
     const response = await fetch('/api/auth/login', {
       method: 'POST',
@@ -37,11 +36,9 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
       
       // Store token in localStorage for client-side access
       localStorage.setItem('token', data.token);
-      sessionStorage.setItem('token', data.token);
       
-      // Simple direct redirect with token in query param
-      // This is the most reliable method
-      window.location.href = `/dashboard?token=${encodeURIComponent(data.token)}`;
+      // Simple redirect - most reliable way
+      window.location.href = '/dashboard';
     } else {
       console.error('Login failed:', data.error || 'Unknown error');
       errorAlert.textContent = data.error || 'Login failed. Please check your credentials.';

@@ -50,31 +50,13 @@
             errorAlert.classList.remove('d-none');
         }
         
-        // Check if we have a token in localStorage - if so we might be logged in
+        // Simple token check - if we have a token, try going to dashboard
         const token = localStorage.getItem('token');
         if (token) {
-            console.log('Found token in localStorage, checking if valid...');
-            // Try to access dashboard directly with the token
-            fetch(`/debug-auth?token=${encodeURIComponent(token)}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Token check result:', data);
-                if (data.hasToken) {
-                    console.log('Token appears valid, redirecting to dashboard...');
-                    window.location.href = `/dashboard?token=${encodeURIComponent(token)}`;
-                } else {
-                    console.log('Token invalid, staying on login page');
-                    localStorage.removeItem('token');
-                }
-            })
-            .catch(err => {
-                console.error('Error checking token:', err);
-            });
+            console.log('Found token in localStorage, attempting dashboard access');
+            // Set the token as a cookie before redirecting
+            document.cookie = `token=${token}; path=/; max-age=3600`;
+            window.location.href = '/dashboard';
         }
     </script>
     <script src="/js/login.js"></script>
