@@ -1,4 +1,3 @@
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
@@ -43,24 +42,20 @@ app.get('/register', (req, res) => {
 
 const { authenticate } = require('./middlewares/auth');
 
-app.get('/dashboard', authenticate, (req, res) => {
-  // Successfully authenticated user
-  console.log('User authenticated as:', req.userId);
-  
-  // Always set a fresh cookie with the token
-  if (req.cookies?.token) {
-    res.cookie('token', req.cookies.token, {
+app.get('/dashboard', (req, res, next) => {
+  // If token is in query params, set it in the cookie before authentication
+  if (req.query.token) {
+    console.log('Received token via query params, setting cookie');
+    res.cookie('token', req.query.token, {
       httpOnly: false,
       maxAge: 3600000, // 1 hour
       path: '/',
-      sameSite: 'lax'
+      sameSite: 'lax' // Changed from strict to lax to allow redirects
     });
   }
-  
-  res.render('dashboard', { 
-    user: req.user,
-    timestamp: new Date().toISOString() 
-  });
+  next();
+}, authenticate, (req, res) => {
+  res.render('dashboard', { user: req.user });
 });
 
 app.get('/file/:fileId', authenticate, (req, res) => {
