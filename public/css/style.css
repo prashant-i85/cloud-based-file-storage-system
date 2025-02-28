@@ -1,0 +1,47 @@
+/* Custom CSS for Cloud Storage App */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.table th {
+    font-weight: 600;
+}
+
+.file-icon {
+    font-size: 1.25rem;
+    margin-right: 0.5rem;
+}
+
+/* Preview modal */
+#previewContent {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* File type colors */
+.file-image {
+    color: #0d6efd;
+}
+
+.file-video {
+    color: #dc3545;
+}
+
+.file-document {
+    color: #0dcaf0;
+}
+
+.file-other {
+    color: #6c757d;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+    }
+}
