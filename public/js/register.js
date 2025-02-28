@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   // Confirmation form submit handler
-  document.getElementById('verifyForm').addEventListener('submit', async (event) => { 
+  document.getElementById('verifyForm').addEventListener('click', async (event) => { 
     event.preventDefault(); 
     
     const confirmationCode = document.getElementById('confirmationCode').value; 
