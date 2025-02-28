@@ -5,6 +5,8 @@ const authenticate = async (req, res, next) => {
   try {
     // Get token from Authorization header or cookies
     const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
+    console.log("Auth Headers:", req.headers.authorization);
+    console.log("Cookies:", req.cookies);
     console.log("Received Token:", token);
 
     if (!token) {
@@ -25,13 +27,19 @@ const authenticate = async (req, res, next) => {
       }
 
       // Verify the token with Cognito
-      const params = { AccessToken: token };
-      const userData = await cognito.getUser(params).promise();
-      console.log("User Data from Cognito:", userData);
+      try {
+        const params = { AccessToken: token };
+        const userData = await cognito.getUser(params).promise();
+        console.log("User Data from Cognito:", userData);
 
-      req.user = userData;
-      req.userId = userData.Username;
-      next();
+        req.user = userData;
+        req.userId = userData.Username;
+        next();
+      } catch (cognitoError) {
+        console.error('Cognito validation error:', cognitoError);
+        res.clearCookie('token');
+        return res.redirect('/?error=invalid_token');
+      }
     } catch (decodeError) {
       console.error('Token decode error:', decodeError);
       res.clearCookie('token');

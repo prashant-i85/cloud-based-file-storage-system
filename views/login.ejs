@@ -58,11 +58,9 @@
 
                 const data = await response.json();
 
-                if (response.ok && data.token) {
-                    // Store token in localStorage
-                    localStorage.setItem('token', data.token);
-
-                    // Redirect to dashboard
+                if (response.ok) {
+                    console.log('Login successful, redirecting...');
+                    // Redirect to dashboard - token is already set as cookie by the server
                     window.location.href = '/dashboard';
                 } else {
                     // Show error message
