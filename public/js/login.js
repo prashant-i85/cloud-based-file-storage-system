@@ -29,8 +29,18 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
     
     if (response.ok) {
       console.log('Login successful, redirecting...');
-      // No need to set localStorage, the server sets the cookie
-      window.location.href = '/dashboard';
+      console.log('Login response:', data);
+      
+      // Also store token in localStorage as backup
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        console.log('Cookie debug:', { cookies: req.cookies });
+      }
+      
+      // Add a small delay before redirecting
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 100);
     } else {
       errorAlert.textContent = data.error || 'Login failed. Please check your credentials.';
       errorAlert.classList.remove('d-none');

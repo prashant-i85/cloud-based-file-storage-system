@@ -6,11 +6,15 @@ const authenticate = async (req, res, next) => {
   try {
     // Get token from Authorization header or cookies
     const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
+    
+    // Debug info
+    console.log("Auth Headers:", req.headers.authorization);
+    console.log("Cookies:", req.cookies);
     console.log("Received Token:", token);
-
+    
     if (!token) {
       console.log("No token provided, redirecting to login");
-      return res.redirect('/');
+      return res.redirect('/?error=no_token');
     }
 
     try {
