@@ -31,16 +31,21 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
       console.log('Login successful, redirecting...');
       console.log('Login response:', data);
       
-      // Also store token in localStorage as backup
+      // Store token in localStorage
       if (data.token) {
         localStorage.setItem('token', data.token);
-        console.log('Cookie debug:', { cookies: req.cookies });
+        
+        // Set it in a cookie manually as a fallback
+        document.cookie = `token=${data.token}; path=/; max-age=3600; SameSite=Strict`;
+        console.log('Token set in localStorage and cookie');
+      } else {
+        console.error('No token received in login response!');
       }
       
-      // Add a small delay before redirecting
+      // Add a larger delay before redirecting to ensure cookies are set
       setTimeout(() => {
         window.location.href = '/dashboard';
-      }, 100);
+      }, 500);
     } else {
       errorAlert.textContent = data.error || 'Login failed. Please check your credentials.';
       errorAlert.classList.remove('d-none');

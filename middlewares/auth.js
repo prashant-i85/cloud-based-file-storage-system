@@ -4,12 +4,20 @@ const jwtDecode = require("jwt-decode");
 
 const authenticate = async (req, res, next) => {
   try {
-    // Get token from Authorization header or cookies
-    const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
+    // Try to get token from multiple sources
+    let token = req.headers.authorization?.split(' ')[1] || 
+                req.cookies?.token || 
+                req.query?.token;
+    
+    // Check local storage token from custom header if present
+    if (req.headers['x-local-token']) {
+      token = req.headers['x-local-token'];
+    }
     
     // Debug info
-    console.log("Auth Headers:", req.headers.authorization);
+    console.log("Auth Headers:", req.headers);
     console.log("Cookies:", req.cookies);
+    console.log("Query params:", req.query);
     console.log("Received Token:", token);
     
     if (!token) {
@@ -22,11 +30,11 @@ const authenticate = async (req, res, next) => {
       const decodedToken = jwtDecode(token);
       console.log("Decoded Token:", decodedToken);
 
-      // Ensure token is an Access Token
-      if (decodedToken.token_use !== "access") {
+      // Check token type if present
+      if (decodedToken.token_use && decodedToken.token_use !== "access") {
         console.log("Invalid token type, redirecting to login");
         res.clearCookie('token');
-        return res.redirect('/');
+        return res.redirect('/?error=invalid_token_type');
       }
 
       // Verify the token with Cognito
