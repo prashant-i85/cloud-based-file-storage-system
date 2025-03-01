@@ -105,3 +105,41 @@ router.post('/logout', async (req, res) => {
 });
 
 module.exports = router;
+// Login user
+router.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const params = {
+      AuthFlow: 'USER_PASSWORD_AUTH',
+      ClientId: process.env.CLIENT_ID,
+      AuthParameters: {
+        USERNAME: username,
+        PASSWORD: password
+      }
+    };
+
+    const data = await cognito.initiateAuth(params).promise();
+
+    if (!data.AuthenticationResult) {
+      throw new Error('Authentication failed: No authentication result returned');
+    }
+
+    console.log('Login successful, token:', data.AuthenticationResult.AccessToken); // Logging the token
+
+    // Set token as cookie
+    res.cookie('token', data.AuthenticationResult.AccessToken, {
+      httpOnly: true,
+      maxAge: 3600000 // 1 hour
+    });
+
+    res.status(200).json({
+      message: 'Login successful',
+      token: data.AuthenticationResult.AccessToken,
+      expiresIn: data.AuthenticationResult.ExpiresIn
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(401).json({ error: error.message });
+  }
+});

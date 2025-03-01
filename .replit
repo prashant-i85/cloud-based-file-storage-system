@@ -1,0 +1,15 @@
+modules = ["nodejs-20"]
+[workflows]
+runButton = "Run"
+
+[[workflows.workflow]]
+name = "Run"
+author = 38645309
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node CloudStorage/app.js"
+
+[[ports]]
+localPort = 3000
+externalPort = 80

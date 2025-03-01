@@ -25,7 +25,9 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Initialize AWS resources
-initializeAWS().catch(console.error);
+initializeAWS()
+  .then(() => console.log('AWS initialized successfully'))
+  .catch(err => console.error('Error initializing AWS:', err));
 
 // Routes
 app.use('/api/auth', authRoutes);
